@@ -21,7 +21,7 @@ public class JodaeriController {
 
     @PostMapping("/question")
     public ResponseEntity<ResponseDto> search(@RequestBody RequestDto request) {
-        ResponseDto response = jodaeriService.answer(request.getQuestion());
+        ResponseDto response = jodaeriService.answer(request);
         return ResponseEntity.ok()
                 .body(response);
     }

@@ -6,5 +6,6 @@ import lombok.Getter;
 @Getter
 @Builder
 public class ResponseDto {
-    private String message;
+    private Long userId;
+    private String answer;
 }
