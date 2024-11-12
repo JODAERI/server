@@ -8,8 +8,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @JsonNaming(value = PropertyNamingStrategies.SnakeCaseStrategy.class)
-public class RequestDto {
-    private Long userId;
-    private String question;
-    private Boolean isFirst;
+public class QuickQuestionRequest {
+    private String category;
 }

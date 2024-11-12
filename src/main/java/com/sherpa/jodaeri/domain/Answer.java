@@ -8,17 +8,15 @@ import lombok.*;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Qna extends BaseTime {
+public class Answer extends BaseTime {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "faq_id")
+    @Column(name = "qna_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    private String question;
+    @JoinColumn(name = "question_id", nullable = false)
+    private Question question;
 
     private String answer;
 }

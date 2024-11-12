@@ -1,25 +1,35 @@
 package com.sherpa.jodaeri.service;
 
-import com.sherpa.jodaeri.domain.Qna;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sherpa.jodaeri.domain.Answer;
+import com.sherpa.jodaeri.domain.Question;
 import com.sherpa.jodaeri.domain.User;
-import com.sherpa.jodaeri.dto.RequestDto;
-import com.sherpa.jodaeri.dto.ResponseDto;
-import com.sherpa.jodaeri.repository.QnaRepository;
+import com.sherpa.jodaeri.dto.*;
+import com.sherpa.jodaeri.repository.AnswerRepository;
+import com.sherpa.jodaeri.repository.QuestionRepository;
 import com.sherpa.jodaeri.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JodaeriService {
     private final UserRepository userRepository;
-    private final QnaRepository qnaRepository;
+    private final QuestionRepository questionRepository;
+    private final AnswerRepository answerRepository;
 
     private final ChatClient chatClient;
+    private final ObjectMapper objectMapper;
 
     private final String LEARN_PROMPTS =
             """
@@ -648,7 +658,7 @@ public class JodaeriService {
                     </example>
             """;
 
-    public ResponseDto answer(RequestDto request) {
+    public AnswerResponse answer(QuestionRequest request) {
         User user = getUser(request);
         String response = generateResponse(user, request);
         saveQna(user, request.getQuestion(), response);
@@ -656,18 +666,18 @@ public class JodaeriService {
         return buildResponseDto(user, response);
     }
 
-    private User getUser(RequestDto request) {
+    private User getUser(QuestionRequest request) {
         if (request.getIsFirst()) {
             User user = User.builder().build();
             userRepository.save(user);
             return user;
         } else {
             return userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new RuntimeException("user not found"));
+                    .orElseThrow(() -> new RuntimeException("사용자 없음"));
         }
     }
 
-    private String generateResponse(User user, RequestDto request) {
+    private String generateResponse(User user, QuestionRequest request) {
         String prompt = request.getIsFirst() ? LEARN_PROMPTS + "사용자의 질문은 다음과 같다.\nquestion:\s" + request.getQuestion() :
                 LEARN_PROMPTS + "지금까지 사용자의 질문과 응답은 다음과 같다.\n" + getQnaHistory(user) + "새로운 질문은 다음과 같다.\n" + request.getQuestion();
 
@@ -678,23 +688,89 @@ public class JodaeriService {
     }
 
     private String getQnaHistory(User user) {
-        List<Qna> qnas = qnaRepository.findByUser(user);
-        return qnas.toString();
+        List<Question> questions = questionRepository.findByUser(user);
+        List<QnaDto> qnaHistory = questions.stream()
+                .map(question -> {
+                    Answer answer = answerRepository.findByQuestion(question)
+                            .orElseThrow(RuntimeException::new);
+                    return QnaDto.builder()
+                            .question(question.getQuestion())
+                            .questionCreatedAt(question.getCreatedAt())
+                            .answer(answer != null ? answer.getAnswer() : "Answer 없음")
+                            .answerCreatedAt(answer != null ? answer.getCreatedAt() : null)
+                            .build();
+                })
+                .toList();
+
+        return qnaHistory.stream()
+                .map(qna -> String.format("Q: %s (질문 시각: %s)\nA: %s (답변 시각: %s)\n",
+                        qna.getQuestion(),
+                        qna.getQuestionCreatedAt(),
+                        qna.getAnswer(),
+                        qna.getAnswerCreatedAt() != null ? qna.getAnswerCreatedAt() : "답변 없음"))
+                .collect(Collectors.joining("\n"));
     }
 
     private void saveQna(User user, String question, String answer) {
-        Qna qna = Qna.builder()
+        Question q = Question.builder()
                 .user(user)
                 .question(question)
+                .build();
+        questionRepository.save(q);
+        Answer a = Answer.builder()
+                .question(q)
                 .answer(answer)
                 .build();
-        qnaRepository.save(qna);
+        answerRepository.save(a);
     }
 
-    private ResponseDto buildResponseDto(User user, String response) {
-        return ResponseDto.builder()
+    private AnswerResponse buildResponseDto(User user, String response) {
+        return AnswerResponse.builder()
                 .userId(user != null ? user.getId() : null)
                 .answer(response)
                 .build();
+    }
+
+    public QnasResponse findQnas(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자 없음 id: " + userId));
+
+        List<QnaDto> qnas = questionRepository.findByUser(user).stream()
+                .map(question -> {
+                    Answer answer = answerRepository.findByQuestion(question)
+                            .orElseThrow(RuntimeException::new);
+                    return QnaDto.builder()
+                            .question(question.getQuestion())
+                            .questionCreatedAt(question.getCreatedAt())
+                            .answer(answer != null ? answer.getAnswer() : "answer 없음")
+                            .answerCreatedAt(answer != null ? answer.getCreatedAt() : null)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return QnasResponse.builder()
+                .userId(userId)
+                .qnas(qnas)
+                .build();
+    }
+
+    public QuickQuestionResponse findQuickQuestion(String category) {
+        try {
+            Map<String, List<String>> quickQuestions = objectMapper.readValue(
+                    Paths.get("src/main/resources/quick.json").toFile(),
+                    new TypeReference<Map<String, List<String>>>() {}
+            );
+            List<String> questions = quickQuestions.getOrDefault(category, List.of());
+
+            return QuickQuestionResponse.builder()
+                    .questions(questions)
+                    .build();
+
+        } catch (IOException e) {
+            log.error("quick.json 파일을 읽는 중 오류 발생: ", e);
+            return QuickQuestionResponse.builder()
+                    .questions(List.of())
+                    .build();
+        }
     }
 }
