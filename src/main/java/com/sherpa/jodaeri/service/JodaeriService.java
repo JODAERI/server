@@ -38,6 +38,7 @@ public class JodaeriService {
                     </role>
                     <instruction>
                     1. 답변 내용만을 Markdown 문법을 사용하여 제공하라.
+                    1.1. Markdown 문법은 #, ##, ###, -, ** **, ` ` 등이 있다.
                     2. 답변 데이터의 출처를 최하단에 url과 함께 표기하라.
                     </instruction>
                     <example>

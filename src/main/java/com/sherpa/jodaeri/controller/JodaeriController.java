@@ -29,7 +29,7 @@ public class JodaeriController {
                 .body(response);
     }
 
-    @GetMapping("/question/quick")
+    @PostMapping("/question/quick")
     public ResponseEntity<QuickQuestionResponse> getQuickQuestion(@RequestBody QuickQuestionRequest request) {
         QuickQuestionResponse response = jodaeriService.findQuickQuestion(request.getCategory());
         return ResponseEntity.ok()

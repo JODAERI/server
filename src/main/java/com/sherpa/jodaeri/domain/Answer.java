@@ -18,5 +18,6 @@ public class Answer extends BaseTime {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
+    @Column(columnDefinition = "TEXT")
     private String answer;
 }
