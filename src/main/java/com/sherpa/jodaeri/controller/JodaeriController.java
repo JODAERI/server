@@ -17,21 +17,27 @@ public class JodaeriController {
 
     @PostMapping("/question")
     public ResponseEntity<AnswerResponse> postQuestion(@RequestBody QuestionRequest request) {
+        log.info("Request to POST question");
         AnswerResponse response = jodaeriService.answer(request);
+        log.info("Response to POST question");
         return ResponseEntity.ok()
                 .body(response);
     }
 
     @GetMapping("/qna/{userId}")
     public ResponseEntity<QnasResponse> getQnas(@PathVariable Long userId) {
+        log.info("Request to GET qnas");
         QnasResponse response = jodaeriService.findQnas(userId);
+        log.info("Response to GET qnas");
         return ResponseEntity.ok()
                 .body(response);
     }
 
     @PostMapping("/question/quick")
     public ResponseEntity<QuickQuestionResponse> getQuickQuestion(@RequestBody QuickQuestionRequest request) {
+        log.info("Request to POST quick question");
         QuickQuestionResponse response = jodaeriService.findQuickQuestion(request.getCategory());
+        log.info("Response to POST quick question");
         return ResponseEntity.ok()
                 .body(response);
     }
