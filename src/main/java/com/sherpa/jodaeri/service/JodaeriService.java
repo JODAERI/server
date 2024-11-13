@@ -662,6 +662,7 @@ public class JodaeriService {
 
     public AnswerResponse answer(QuestionRequest request) {
         User user = getUser(request);
+        log.info("질문의 user: {}", user.getId());
         String response = generateResponse(user, request);
         saveQna(user, request.getQuestion(), response);
 
@@ -724,6 +725,7 @@ public class JodaeriService {
                 .answer(answer)
                 .build();
         answerRepository.save(a);
+        log.info("QNA 저장 > > user: {}, question: {}, answer: {}", user.getId(), q.getId(), a.getId());
     }
 
     private AnswerResponse buildResponseDto(User user, String response) {
