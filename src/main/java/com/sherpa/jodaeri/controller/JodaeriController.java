@@ -15,6 +15,7 @@ public class JodaeriController {
 
     private final JodaeriService jodaeriService;
 
+    // 질문
     @PostMapping("/question")
     public ResponseEntity<AnswerResponse> postQuestion(@RequestBody QuestionRequest request) {
         log.info("Request to POST question");
@@ -24,6 +25,7 @@ public class JodaeriController {
                 .body(response);
     }
 
+    // QNA 조회
     @GetMapping("/qna/{userId}")
     public ResponseEntity<QnasResponse> getQnas(@PathVariable Long userId) {
         log.info("Request to GET qnas");
@@ -33,6 +35,7 @@ public class JodaeriController {
                 .body(response);
     }
 
+    // 빠른 질문 찾기
     @PostMapping("/question/quick")
     public ResponseEntity<QuickQuestionResponse> getQuickQuestion(@RequestBody QuickQuestionRequest request) {
         log.info("Request to POST quick question");

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -756,6 +757,7 @@ public class JodaeriService {
     }
 
     public QuickQuestionResponse findQuickQuestion(String category) {
+        log.info("요청 카테고리: {}", category);
         try {
             Map<String, List<String>> quickQuestions = objectMapper.readValue(
                     Paths.get("src/main/resources/quick.json").toFile(),
@@ -765,6 +767,7 @@ public class JodaeriService {
 
             return QuickQuestionResponse.builder()
                     .questions(questions)
+                    .time(LocalDateTime.now())
                     .build();
 
         } catch (IOException e) {
