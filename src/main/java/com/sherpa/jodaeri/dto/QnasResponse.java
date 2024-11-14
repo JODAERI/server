@@ -11,6 +11,5 @@ import java.util.List;
 @Builder
 @JsonNaming(value = PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class QnasResponse {
-    private Long userId;
     private List<QnaDto> qnas;
 }

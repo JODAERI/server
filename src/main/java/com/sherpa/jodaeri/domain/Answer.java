@@ -14,7 +14,7 @@ public class Answer extends BaseTime {
     @Column(name = "qna_id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
