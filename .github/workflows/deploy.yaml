@@ -28,4 +28,4 @@ jobs:
             echo "$APPLICATION_PROPERTIES" > src/main/resources/application.yaml
             ./gradlew clean build -x test
             sudo fuser -k -n tcp 8080 || true
-            nohup java -jar build/libs/*SNAPSHOT.jar > ./output.log 2>&1 &
+            nohup -Duser.timezone=Asia/Seoul java -jar build/libs/*SNAPSHOT.jar > ./output.log 2>&1 &
