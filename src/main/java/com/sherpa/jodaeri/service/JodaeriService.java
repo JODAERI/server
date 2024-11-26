@@ -664,9 +664,10 @@ public class JodaeriService {
         User user = getUser(request);
         log.info("질문의 user: {}", user.getId());
         String response = generateResponse(user, request);
-        saveQna(user, request.getQuestion(), response);
+        String shortResponse = generateShortResponse(response);
+        saveQna(user, request.getQuestion(), response, shortResponse);
 
-        return buildResponseDto(user, response);
+        return buildResponseDto(user, response, shortResponse);
     }
 
     private User getUser(QuestionRequest request) {
@@ -689,6 +690,17 @@ public class JodaeriService {
                 .call()
                 .content();
     }
+
+    private String generateShortResponse(String answer) {
+        String prompt = "다음 문장을 공백을 포함하여 150자 이내로 요약하라.:\n" + answer;
+
+        return chatClient.prompt()
+                .user(userSpec -> userSpec.text(prompt))
+                .call()
+                .content()
+                .strip();
+    }
+
 
     private String getQnaHistory(User user) {
         List<Question> questions = questionRepository.findByUser(user);
@@ -714,24 +726,28 @@ public class JodaeriService {
                 .collect(Collectors.joining("\n"));
     }
 
-    private void saveQna(User user, String question, String answer) {
+    private void saveQna(User user, String question, String answer, String shortAnswer) {
         Question q = Question.builder()
                 .user(user)
                 .question(question)
                 .build();
         questionRepository.save(q);
+
         Answer a = Answer.builder()
                 .question(q)
                 .answer(answer)
+                .shortAnswer(shortAnswer)
                 .build();
         answerRepository.save(a);
-        log.info("QNA 저장 > > user: {}, question: {}, answer: {}", user.getId(), q.getId(), a.getId());
+
+        log.info("QNA 저장 > > user: {}, question: {}, answer: {}, shortAnswer: {}", user.getId(), q.getId(), a.getId(), shortAnswer);
     }
 
-    private AnswerResponse buildResponseDto(User user, String response) {
+    private AnswerResponse buildResponseDto(User user, String response, String shortResponse) {
         return AnswerResponse.builder()
                 .userId(user != null ? user.getId() : null)
                 .answer(response)
+                .shortAnswer(shortResponse)
                 .build();
     }
 

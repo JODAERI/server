@@ -20,4 +20,7 @@ public class Answer extends BaseTime {
 
     @Column(columnDefinition = "TEXT")
     private String answer;
+
+    @Column(columnDefinition = "TEXT")
+    private String shortAnswer;
 }
