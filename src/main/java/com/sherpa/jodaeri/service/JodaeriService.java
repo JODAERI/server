@@ -664,10 +664,12 @@ public class JodaeriService {
         User user = getUser(request);
         log.info("질문의 user: {}", user.getId());
         String response = generateResponse(user, request);
-        String shortResponse = generateShortResponse(response);
-        saveQna(user, request.getQuestion(), response, shortResponse);
+        if (request.getIsShort()) {
+            response = generateShortResponse(response);
+        }
+        saveQna(user, request.getQuestion(), response);
 
-        return buildResponseDto(user, response, shortResponse);
+        return buildResponseDto(user, response);
     }
 
     private User getUser(QuestionRequest request) {
@@ -726,7 +728,7 @@ public class JodaeriService {
                 .collect(Collectors.joining("\n"));
     }
 
-    private void saveQna(User user, String question, String answer, String shortAnswer) {
+    private void saveQna(User user, String question, String answer) {
         Question q = Question.builder()
                 .user(user)
                 .question(question)
@@ -736,18 +738,16 @@ public class JodaeriService {
         Answer a = Answer.builder()
                 .question(q)
                 .answer(answer)
-                .shortAnswer(shortAnswer)
                 .build();
         answerRepository.save(a);
 
-        log.info("QNA 저장 > > user: {}, question: {}, answer: {}, shortAnswer: {}", user.getId(), q.getId(), a.getId(), shortAnswer);
+        log.info("QNA 저장 > > user: {}, question: {}, answer: {}", user.getId(), q.getId(), a.getId());
     }
 
-    private AnswerResponse buildResponseDto(User user, String response, String shortResponse) {
+    private AnswerResponse buildResponseDto(User user, String response) {
         return AnswerResponse.builder()
                 .userId(user != null ? user.getId() : null)
                 .answer(response)
-                .shortAnswer(shortResponse)
                 .build();
     }
 

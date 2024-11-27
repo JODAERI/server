@@ -12,4 +12,5 @@ public class QuestionRequest {
     private Long userId;
     private String question;
     private Boolean isFirst;
+    private Boolean isShort;
 }
