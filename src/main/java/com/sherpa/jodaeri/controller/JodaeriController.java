@@ -19,7 +19,7 @@ public class JodaeriController {
     @PostMapping("/question")
     public ResponseEntity<AnswerResponse> postQuestion(@RequestBody QuestionRequest request) {
         log.info("Request to POST question");
-        AnswerResponse response = jodaeriService.answer(request);
+        AnswerResponse response = jodaeriService.answerWithRag(request);
         return ResponseEntity.ok()
                 .body(response);
     }

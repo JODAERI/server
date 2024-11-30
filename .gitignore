@@ -38,6 +38,8 @@ out/
 
 ### Application ###
 **/application.yaml
+**/intent.txt
+**/quick.json
 
 # macOS system files
 *.DS_Store
