@@ -31,8 +31,6 @@ public class JodaeriService {
     private final QuestionRepository questionRepository;
     private final AnswerRepository answerRepository;
 
-    private final DocumentRetrievalService retrievalService;
-
     private final ChatClient chatClient;
     private final ObjectMapper objectMapper;
 
@@ -49,39 +47,32 @@ public class JodaeriService {
 
     public AnswerResponse answerWithRag(QuestionRequest request) {
         User user = getUser(request);
-        log.info("질문의 user: {}", user.getId());
-        // 1. 검색을 통해 문서를 가져옴
-        List<String> relatedDocuments = retrievalService.searchDocuments(request.getQuestion());
-        // 2. 검색 결과와 질문을 결합해 프롬프트 생성
-        String prompt = createPrompt(user, request, relatedDocuments);
-        // 3. OpenAI를 호출하여 응답 생성
+        log.info("RAG 질문의 user: {}", user.getId());
+        String ragPrompt = createPrompt(user, request) + "\n인터넷 검색을 기반으로 답변을 생성하라";
         String response = chatClient.prompt()
-                .user(userSpec -> userSpec.text(prompt))
+                .user(userSpec -> userSpec.text(ragPrompt))
                 .call()
                 .content();
-        // 4. 결과 저장 및 응답 반환
         saveQna(user, request.getQuestion(), response);
         return buildResponseDto(user, response);
     }
 
-    private String createPrompt(User user, QuestionRequest request, List<String> documents) {
-        String documentContext = String.join("\n", documents);
+    private String createPrompt(User user, QuestionRequest request) {
         String basePrompt = request.getIsFirst() ? LEARN_PROMPTS : LEARN_PROMPTS + "지금까지의 질문 기록:\n" + getQnaHistory(user);
-
-        return basePrompt + "\n검색 결과:\n" + documentContext + "\n사용자 질문:\n" + request.getQuestion();
+        return basePrompt + "사용자의 질문은 다음과 같다.\nquestion:\s" + request.getQuestion();
     }
 
-//    public AnswerResponse answer(QuestionRequest request) {
-//        User user = getUser(request);
-//        log.info("질문의 user: {}", user.getId());
-//        String response = generateResponse(user, request);
-//        if (request.getIsShort()) {
-//            response = generateShortResponse(response);
-//        }
-//        saveQna(user, request.getQuestion(), response);
-//
-//        return buildResponseDto(user, response);
-//    }
+    public AnswerResponse answer(QuestionRequest request) {
+        User user = getUser(request);
+        log.info("질문의 user: {}", user.getId());
+        String response = generateResponse(user, request);
+        if (request.getIsShort()) {
+            response = generateShortResponse(response);
+        }
+        saveQna(user, request.getQuestion(), response);
+
+        return buildResponseDto(user, response);
+    }
 
     private User getUser(QuestionRequest request) {
         if (request.getIsFirst()) {
