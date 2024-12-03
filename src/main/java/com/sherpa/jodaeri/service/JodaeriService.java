@@ -50,19 +50,15 @@ public class JodaeriService {
     public AnswerResponse answerWithRag(QuestionRequest request) {
         User user = getUser(request);
         log.info("질문의 user: {}", user.getId());
-
         // 1. 검색을 통해 문서를 가져옴
         List<String> relatedDocuments = retrievalService.searchDocuments(request.getQuestion());
-
         // 2. 검색 결과와 질문을 결합해 프롬프트 생성
         String prompt = createPrompt(user, request, relatedDocuments);
-
         // 3. OpenAI를 호출하여 응답 생성
         String response = chatClient.prompt()
                 .user(userSpec -> userSpec.text(prompt))
                 .call()
                 .content();
-
         // 4. 결과 저장 및 응답 반환
         saveQna(user, request.getQuestion(), response);
         return buildResponseDto(user, response);
