@@ -49,12 +49,13 @@ public class JodaeriService {
         User user = getUser(request);
         log.info("RAG 질문의 user: {}", user.getId());
         String ragPrompt = createPrompt(user, request) + "\n인터넷 검색을 기반으로 답변을 생성하라";
-        String response = chatClient.prompt()
-                .user(userSpec -> userSpec.text(ragPrompt))
-                .call()
-                .content();
-        saveQna(user, request.getQuestion(), response);
-        return buildResponseDto(user, response);
+        String response = generateResponse(ragPrompt);
+        String finalResponse = request.getIsShort()
+                ? generateShortResponse(response)
+                : response;
+        saveQna(user, request.getQuestion(), finalResponse);
+
+        return buildResponseDto(user, finalResponse);
     }
 
     private String createPrompt(User user, QuestionRequest request) {
@@ -65,13 +66,14 @@ public class JodaeriService {
     public AnswerResponse answer(QuestionRequest request) {
         User user = getUser(request);
         log.info("질문의 user: {}", user.getId());
-        String response = generateResponse(user, request);
-        if (request.getIsShort()) {
-            response = generateShortResponse(response);
-        }
-        saveQna(user, request.getQuestion(), response);
+        String prompt = createPrompt(user, request);
+        String response = generateResponse(prompt);
+        String finalResponse = request.getIsShort()
+                ? generateShortResponse(response)
+                : response;
+        saveQna(user, request.getQuestion(), finalResponse);
 
-        return buildResponseDto(user, response);
+        return buildResponseDto(user, finalResponse);
     }
 
     private User getUser(QuestionRequest request) {
@@ -85,10 +87,7 @@ public class JodaeriService {
         }
     }
 
-    private String generateResponse(User user, QuestionRequest request) {
-        String prompt = request.getIsFirst() ? LEARN_PROMPTS + "사용자의 질문은 다음과 같다.\nquestion:\s" + request.getQuestion() :
-                LEARN_PROMPTS + "지금까지 사용자의 질문과 응답은 다음과 같다.\n" + getQnaHistory(user) + "새로운 질문은 다음과 같다.\n" + request.getQuestion();
-
+    private String generateResponse(String prompt) {
         return chatClient.prompt()
                 .user(userSpec -> userSpec.text(prompt))
                 .call()
