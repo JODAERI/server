@@ -11,7 +11,7 @@ import lombok.*;
 public class Question extends BaseTime {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "qna_id")
+    @Column(name = "question_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
